@@ -7,6 +7,7 @@ import { ScreenHeader } from "@/components/echoryx/ScreenHeader";
 import tiger from "@/assets/tiger-mascot.png";
 import { RequireAuth, useAuth } from "@/lib/auth";
 import { ensureDeviceToken, watchSessionsApi, type WatchSession } from "@/lib/api";
+import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/child")({
   head: () => ({
@@ -36,6 +37,7 @@ function formatTime(iso: string) {
 
 function Child() {
   const { activeChild } = useAuth();
+  const t = useT();
   const [current, setCurrent] = useState<WatchSession | null>(null);
   const [history, setHistory] = useState<WatchSession[]>([]);
   const [isBusy, setIsBusy] = useState(false);
@@ -81,68 +83,70 @@ function Child() {
 
   return (
     <MobileFrame>
-      <ScreenHeader title="Now watching" />
+      <ScreenHeader title={t("child.title")} />
 
-      <div className="rounded-3xl overflow-hidden bg-card border border-border/60 shadow-card">
-        <div className="relative h-40 gradient-primary flex items-center justify-center">
-          <div className="absolute inset-0 opacity-30 [background:radial-gradient(circle_at_30%_40%,white,transparent_60%)]" />
-          <img src={tiger} alt="Show" className="relative h-32 animate-float" />
-          {!current && (
-            <button
-              onClick={startWatching}
-              disabled={isBusy || !activeChild}
-              className="absolute inset-0 flex items-center justify-center disabled:opacity-60"
-            >
-              <span className="w-14 h-14 rounded-full bg-white/25 backdrop-blur flex items-center justify-center animate-pulse-ring">
-                <Play className="w-6 h-6 text-white ml-0.5" fill="white" />
-              </span>
-            </button>
-          )}
-        </div>
-        <div className="p-4">
-          {current ? (
-            <>
-              <div className="font-bold">{current.contentTitle ?? current.sourceApp}</div>
-              <div className="text-xs text-muted-foreground mt-0.5">{current.sourceApp} · {current.category}</div>
-              <div className="text-xs text-muted-foreground">Started at {formatTime(current.startedAt)}</div>
+      <div className="desktop:grid desktop:grid-cols-5 desktop:gap-6 desktop:items-start">
+        <div className="desktop:col-span-2 rounded-3xl overflow-hidden bg-card border border-border/60 shadow-card">
+          <div className="relative h-40 md:h-48 gradient-primary flex items-center justify-center">
+            <div className="absolute inset-0 opacity-30 [background:radial-gradient(circle_at_30%_40%,white,transparent_60%)]" />
+            <img src={tiger} alt="Show" className="relative h-32 md:h-36 animate-float" />
+            {!current && (
               <button
-                onClick={endWatching}
-                disabled={isBusy}
-                className="mt-3 w-full py-2.5 rounded-xl bg-secondary border border-border font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-60"
+                onClick={startWatching}
+                disabled={isBusy || !activeChild}
+                className="absolute inset-0 flex items-center justify-center disabled:opacity-60"
               >
-                <Square className="w-3.5 h-3.5" /> End watching
+                <span className="w-14 h-14 rounded-full bg-white/25 backdrop-blur flex items-center justify-center animate-pulse-ring">
+                  <Play className="w-6 h-6 text-white ml-0.5" fill="white" />
+                </span>
               </button>
-            </>
+            )}
+          </div>
+          <div className="p-4 md:p-5">
+            {current ? (
+              <>
+                <div className="font-bold">{current.contentTitle ?? current.sourceApp}</div>
+                <div className="text-xs text-muted-foreground mt-0.5">{current.sourceApp} · {current.category}</div>
+                <div className="text-xs text-muted-foreground">{t("child.startedAt", { time: formatTime(current.startedAt) })}</div>
+                <button
+                  onClick={endWatching}
+                  disabled={isBusy}
+                  className="mt-3 w-full py-2.5 rounded-xl bg-secondary border border-border font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-60"
+                >
+                  <Square className="w-3.5 h-3.5" /> {t("child.endWatching")}
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="font-semibold text-sm">{t("child.nothingPlaying")}</div>
+                <div className="text-xs text-muted-foreground mt-0.5">{t("child.noCompanion")}</div>
+              </>
+            )}
+          </div>
+        </div>
+
+        <div className="desktop:col-span-3 mt-6 desktop:mt-0">
+          <h2 className="font-bold mb-3">{t("child.watchHistory")}</h2>
+          {history.length === 0 ? (
+            <p className="text-xs text-muted-foreground">{t("child.noHistory")}</p>
           ) : (
-            <>
-              <div className="font-semibold text-sm">Nothing playing right now</div>
-              <div className="text-xs text-muted-foreground mt-0.5">
-                No Android companion app connected yet — tap play above to simulate a watch session for this demo.
-              </div>
-            </>
+            <ul className="space-y-2 md:grid md:grid-cols-2 desktop:grid-cols-1 md:gap-2 md:space-y-0">
+              {history.map((h) => (
+                <li key={h.id} className="flex items-center gap-3 p-3 rounded-2xl bg-card border border-border/60">
+                  <div className="w-12 h-12 rounded-xl gradient-primary shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold truncate">{h.contentTitle ?? h.sourceApp}</div>
+                    <div className="text-[11px] text-muted-foreground">{h.sourceApp}</div>
+                  </div>
+                  <div className="text-[11px] text-muted-foreground text-right shrink-0">
+                    {formatTime(h.startedAt)}{h.endedAt ? ` - ${formatTime(h.endedAt)}` : ` ${t("child.ongoing")}`}
+                  </div>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
       </div>
-
-      <h2 className="font-bold mt-6 mb-3">Watch history</h2>
-      {history.length === 0 ? (
-        <p className="text-xs text-muted-foreground">No watch sessions recorded yet.</p>
-      ) : (
-        <ul className="space-y-2">
-          {history.map((h) => (
-            <li key={h.id} className="flex items-center gap-3 p-3 rounded-2xl bg-card border border-border/60">
-              <div className="w-12 h-12 rounded-xl gradient-primary" />
-              <div className="flex-1">
-                <div className="text-sm font-semibold">{h.contentTitle ?? h.sourceApp}</div>
-                <div className="text-[11px] text-muted-foreground">{h.sourceApp}</div>
-              </div>
-              <div className="text-[11px] text-muted-foreground">
-                {formatTime(h.startedAt)}{h.endedAt ? ` - ${formatTime(h.endedAt)}` : " (ongoing)"}
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
       <BottomNav />
     </MobileFrame>
   );

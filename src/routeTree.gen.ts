@@ -13,19 +13,24 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as CharactersRouteImport } from './routes/characters'
 import { Route as ChildRouteImport } from './routes/child'
-import { Route as ConversationRouteImport } from './routes/conversation'
 import { Route as DevicesRouteImport } from './routes/devices'
 import { Route as FrequencyRouteImport } from './routes/frequency'
+import { Route as HelpSupportRouteImport } from './routes/help-support'
 import { Route as HomeRouteImport } from './routes/home'
+import { Route as LanguageRouteImport } from './routes/language'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as NotificationPreferencesRouteImport } from './routes/notification-preferences'
 import { Route as OverlayRouteImport } from './routes/overlay'
 import { Route as ParentRouteImport } from './routes/parent'
+import { Route as PersonalInfoRouteImport } from './routes/personal-info'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ProgressRouteImport } from './routes/progress'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as RewardsRouteImport } from './routes/rewards'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as SubscriptionRouteImport } from './routes/subscription'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -47,11 +52,6 @@ const ChildRoute = ChildRouteImport.update({
   path: '/child',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ConversationRoute = ConversationRouteImport.update({
-  id: '/conversation',
-  path: '/conversation',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const DevicesRoute = DevicesRouteImport.update({
   id: '/devices',
   path: '/devices',
@@ -62,14 +62,29 @@ const FrequencyRoute = FrequencyRouteImport.update({
   path: '/frequency',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HelpSupportRoute = HelpSupportRouteImport.update({
+  id: '/help-support',
+  path: '/help-support',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HomeRoute = HomeRouteImport.update({
   id: '/home',
   path: '/home',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LanguageRoute = LanguageRouteImport.update({
+  id: '/language',
+  path: '/language',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationPreferencesRoute = NotificationPreferencesRouteImport.update({
+  id: '/notification-preferences',
+  path: '/notification-preferences',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OverlayRoute = OverlayRouteImport.update({
@@ -80,6 +95,16 @@ const OverlayRoute = OverlayRouteImport.update({
 const ParentRoute = ParentRouteImport.update({
   id: '/parent',
   path: '/parent',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PersonalInfoRoute = PersonalInfoRouteImport.update({
+  id: '/personal-info',
+  path: '/personal-info',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -112,44 +137,59 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SubscriptionRoute = SubscriptionRouteImport.update({
+  id: '/subscription',
+  path: '/subscription',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
   '/characters': typeof CharactersRoute
   '/child': typeof ChildRoute
-  '/conversation': typeof ConversationRoute
   '/devices': typeof DevicesRoute
   '/frequency': typeof FrequencyRoute
+  '/help-support': typeof HelpSupportRoute
   '/home': typeof HomeRoute
+  '/language': typeof LanguageRoute
   '/login': typeof LoginRoute
+  '/notification-preferences': typeof NotificationPreferencesRoute
   '/overlay': typeof OverlayRoute
   '/parent': typeof ParentRoute
+  '/personal-info': typeof PersonalInfoRoute
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/progress': typeof ProgressRoute
   '/register': typeof RegisterRoute
   '/rewards': typeof RewardsRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/subscription': typeof SubscriptionRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
   '/characters': typeof CharactersRoute
   '/child': typeof ChildRoute
-  '/conversation': typeof ConversationRoute
   '/devices': typeof DevicesRoute
   '/frequency': typeof FrequencyRoute
+  '/help-support': typeof HelpSupportRoute
   '/home': typeof HomeRoute
+  '/language': typeof LanguageRoute
   '/login': typeof LoginRoute
+  '/notification-preferences': typeof NotificationPreferencesRoute
   '/overlay': typeof OverlayRoute
   '/parent': typeof ParentRoute
+  '/personal-info': typeof PersonalInfoRoute
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/progress': typeof ProgressRoute
   '/register': typeof RegisterRoute
   '/rewards': typeof RewardsRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/subscription': typeof SubscriptionRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -157,19 +197,24 @@ export interface FileRoutesById {
   '/analytics': typeof AnalyticsRoute
   '/characters': typeof CharactersRoute
   '/child': typeof ChildRoute
-  '/conversation': typeof ConversationRoute
   '/devices': typeof DevicesRoute
   '/frequency': typeof FrequencyRoute
+  '/help-support': typeof HelpSupportRoute
   '/home': typeof HomeRoute
+  '/language': typeof LanguageRoute
   '/login': typeof LoginRoute
+  '/notification-preferences': typeof NotificationPreferencesRoute
   '/overlay': typeof OverlayRoute
   '/parent': typeof ParentRoute
+  '/personal-info': typeof PersonalInfoRoute
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/progress': typeof ProgressRoute
   '/register': typeof RegisterRoute
   '/rewards': typeof RewardsRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/subscription': typeof SubscriptionRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -178,57 +223,72 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/characters'
     | '/child'
-    | '/conversation'
     | '/devices'
     | '/frequency'
+    | '/help-support'
     | '/home'
+    | '/language'
     | '/login'
+    | '/notification-preferences'
     | '/overlay'
     | '/parent'
+    | '/personal-info'
+    | '/privacy'
     | '/profile'
     | '/progress'
     | '/register'
     | '/rewards'
     | '/settings'
     | '/sitemap.xml'
+    | '/subscription'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/analytics'
     | '/characters'
     | '/child'
-    | '/conversation'
     | '/devices'
     | '/frequency'
+    | '/help-support'
     | '/home'
+    | '/language'
     | '/login'
+    | '/notification-preferences'
     | '/overlay'
     | '/parent'
+    | '/personal-info'
+    | '/privacy'
     | '/profile'
     | '/progress'
     | '/register'
     | '/rewards'
     | '/settings'
     | '/sitemap.xml'
+    | '/subscription'
   id:
     | '__root__'
     | '/'
     | '/analytics'
     | '/characters'
     | '/child'
-    | '/conversation'
     | '/devices'
     | '/frequency'
+    | '/help-support'
     | '/home'
+    | '/language'
     | '/login'
+    | '/notification-preferences'
     | '/overlay'
     | '/parent'
+    | '/personal-info'
+    | '/privacy'
     | '/profile'
     | '/progress'
     | '/register'
     | '/rewards'
     | '/settings'
     | '/sitemap.xml'
+    | '/subscription'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -236,19 +296,24 @@ export interface RootRouteChildren {
   AnalyticsRoute: typeof AnalyticsRoute
   CharactersRoute: typeof CharactersRoute
   ChildRoute: typeof ChildRoute
-  ConversationRoute: typeof ConversationRoute
   DevicesRoute: typeof DevicesRoute
   FrequencyRoute: typeof FrequencyRoute
+  HelpSupportRoute: typeof HelpSupportRoute
   HomeRoute: typeof HomeRoute
+  LanguageRoute: typeof LanguageRoute
   LoginRoute: typeof LoginRoute
+  NotificationPreferencesRoute: typeof NotificationPreferencesRoute
   OverlayRoute: typeof OverlayRoute
   ParentRoute: typeof ParentRoute
+  PersonalInfoRoute: typeof PersonalInfoRoute
+  PrivacyRoute: typeof PrivacyRoute
   ProfileRoute: typeof ProfileRoute
   ProgressRoute: typeof ProgressRoute
   RegisterRoute: typeof RegisterRoute
   RewardsRoute: typeof RewardsRoute
   SettingsRoute: typeof SettingsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  SubscriptionRoute: typeof SubscriptionRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -281,13 +346,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChildRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/conversation': {
-      id: '/conversation'
-      path: '/conversation'
-      fullPath: '/conversation'
-      preLoaderRoute: typeof ConversationRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/devices': {
       id: '/devices'
       path: '/devices'
@@ -302,6 +360,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FrequencyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/help-support': {
+      id: '/help-support'
+      path: '/help-support'
+      fullPath: '/help-support'
+      preLoaderRoute: typeof HelpSupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/home': {
       id: '/home'
       path: '/home'
@@ -309,11 +374,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HomeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/language': {
+      id: '/language'
+      path: '/language'
+      fullPath: '/language'
+      preLoaderRoute: typeof LanguageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notification-preferences': {
+      id: '/notification-preferences'
+      path: '/notification-preferences'
+      fullPath: '/notification-preferences'
+      preLoaderRoute: typeof NotificationPreferencesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/overlay': {
@@ -328,6 +407,20 @@ declare module '@tanstack/react-router' {
       path: '/parent'
       fullPath: '/parent'
       preLoaderRoute: typeof ParentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/personal-info': {
+      id: '/personal-info'
+      path: '/personal-info'
+      fullPath: '/personal-info'
+      preLoaderRoute: typeof PersonalInfoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -372,6 +465,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/subscription': {
+      id: '/subscription'
+      path: '/subscription'
+      fullPath: '/subscription'
+      preLoaderRoute: typeof SubscriptionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -380,19 +480,24 @@ const rootRouteChildren: RootRouteChildren = {
   AnalyticsRoute: AnalyticsRoute,
   CharactersRoute: CharactersRoute,
   ChildRoute: ChildRoute,
-  ConversationRoute: ConversationRoute,
   DevicesRoute: DevicesRoute,
   FrequencyRoute: FrequencyRoute,
+  HelpSupportRoute: HelpSupportRoute,
   HomeRoute: HomeRoute,
+  LanguageRoute: LanguageRoute,
   LoginRoute: LoginRoute,
+  NotificationPreferencesRoute: NotificationPreferencesRoute,
   OverlayRoute: OverlayRoute,
   ParentRoute: ParentRoute,
+  PersonalInfoRoute: PersonalInfoRoute,
+  PrivacyRoute: PrivacyRoute,
   ProfileRoute: ProfileRoute,
   ProgressRoute: ProgressRoute,
   RegisterRoute: RegisterRoute,
   RewardsRoute: RewardsRoute,
   SettingsRoute: SettingsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  SubscriptionRoute: SubscriptionRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

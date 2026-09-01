@@ -1,4 +1,19 @@
-const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? "http://localhost:4000/api/v1";
+// In production (e.g. Railway), the frontend and backend live on different
+// domains, so VITE_API_URL must be set explicitly at build time — see DEPLOY.md.
+// In local dev, the LAN IP of this machine can change (new WiFi, DHCP renewal),
+// which would silently break API calls from a phone/other device on the network.
+// So when VITE_API_URL isn't set, derive the backend host from whatever host the
+// browser actually used to load this page — same origin, just port 4000.
+function computeApiBase(): string {
+  const explicit = import.meta.env.VITE_API_URL as string | undefined;
+  if (explicit) return explicit;
+  if (typeof window !== "undefined") {
+    return `${window.location.protocol}//${window.location.hostname}:4000/api/v1`;
+  }
+  return "http://localhost:4000/api/v1";
+}
+
+const API_BASE = computeApiBase();
 
 const ACCESS_TOKEN_KEY = "echoryx.accessToken";
 const REFRESH_TOKEN_KEY = "echoryx.refreshToken";
@@ -101,6 +116,26 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}, 
     tokenStore.clear();
   }
 
+  // A stored device token can belong to a previously logged-in parent on this
+  // browser (e.g. switched accounts without signing out) — the backend
+  // rejects it as 403 since the device no longer matches. Self-heal by
+  // dropping it and getting a fresh one for whoever is logged in now, then
+  // retry once, so "log in as any account" always just works.
+  if (res.status === 403 && auth === "device" && !_isRetry) {
+    // Only clear if the token we sent is the one still on record — two
+    // concurrent 403s (e.g. a double-fired effect) must not have the second
+    // one wipe out the fresh token the first one just fetched.
+    if (tokenStore.getDeviceToken() === (headers.Authorization?.slice("Bearer ".length) ?? null)) {
+      localStorage.removeItem(DEVICE_TOKEN_KEY);
+    }
+    try {
+      await ensureDeviceToken();
+      return apiRequest<T>(path, options, true);
+    } catch {
+      // fall through to the normal error handling below
+    }
+  }
+
   if (!res.ok) {
     const payload = await res.json().catch(() => ({ code: "UNKNOWN", message: res.statusText }));
     throw new ApiError(res.status, payload.code ?? "UNKNOWN", payload.message ?? res.statusText);
@@ -112,7 +147,17 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}, 
 
 // --- Domain types (mirrors backend response shapes) -------------------------
 
-export type Parent = { id: string; email: string; name: string; phone: string | null; createdAt: string };
+export type Plan = "free" | "plus" | "premium";
+export type Parent = {
+  id: string;
+  email: string;
+  name: string;
+  phone: string | null;
+  createdAt: string;
+  hasPin: boolean;
+  locale: "en" | "vi";
+  plan: Plan;
+};
 export type Character = { id: string; code: string; name: string; nick: string; colorToken: string; imageKey: string };
 export type AgeGroup = "toddler" | "preschool" | "early_elementary" | "elementary";
 export type Child = {
@@ -180,6 +225,15 @@ export type RewardsSummary = { starBalance: number; badges: Badge[] };
 export type RewardItem = { id: string; name: string; description: string | null; costStars: number };
 export type Redemption = { id: string; childId: string; rewardItemId: string; costStars: number; status: string };
 export type Notification = { id: string; type: string; title: string; body: string; isRead: boolean; createdAt: string };
+export type NotificationPrefs = {
+  milestone: boolean;
+  badge_earned: boolean;
+  redemption_requested: boolean;
+  energy_budget_reached: boolean;
+  weekly_report: boolean;
+};
+export type Locale = "en" | "vi";
+export type AppSettings = { hasPin: boolean; notificationPrefs: NotificationPrefs; locale: Locale; plan: Plan };
 
 // --- API namespaces -----------------------------------------------------
 
@@ -204,6 +258,8 @@ export const authApi = {
       auth: "none",
     }),
   me: () => apiRequest<Parent>("/auth/me"),
+  updateProfile: (input: { name?: string; phone?: string | null }) =>
+    apiRequest<Parent>("/auth/me", { method: "PATCH", body: input }),
   logout: (refreshToken: string) =>
     apiRequest<void>("/auth/logout", { method: "POST", body: { refreshToken }, auth: "none" }),
 };
@@ -287,15 +343,45 @@ export const progressApi = {
 
 export const notificationsApi = {
   list: () => apiRequest<Notification[]>("/notifications"),
+  markRead: (notificationId: string) => apiRequest<Notification>(`/notifications/${notificationId}/read`, { method: "POST" }),
+};
+
+export const settingsApi = {
+  get: () => apiRequest<AppSettings>("/settings"),
+  setPin: (pin: string) => apiRequest<{ hasPin: boolean }>("/settings/pin", { method: "PUT", body: { pin } }),
+  removePin: () => apiRequest<{ hasPin: boolean }>("/settings/pin", { method: "DELETE" }),
+  verifyPin: (pin: string) => apiRequest<{ valid: boolean }>("/settings/pin/verify", { method: "POST", body: { pin } }),
+  updateNotificationPrefs: (patch: Partial<NotificationPrefs>) =>
+    apiRequest<NotificationPrefs>("/settings/notification-prefs", { method: "PATCH", body: patch }),
+  updateLocale: (locale: Locale) => apiRequest<{ locale: Locale }>("/settings/locale", { method: "PATCH", body: { locale } }),
+  updatePlan: (plan: Plan) => apiRequest<{ plan: Plan }>("/settings/plan", { method: "PATCH", body: { plan } }),
 };
 
 // The on-device Android companion app doesn't exist yet in this project, so the
 // parent's own browser session "borrows" a virtual device (see backend
 // POST /devices/web-preview) to preview watch-session/Niso conversation flows.
+//
+// Single-flight: two callers racing to fetch a device token at once (e.g. an
+// effect that double-fires) must not each independently hit the endpoint and
+// clobber tokenStore with two different tokens — they share one in-flight
+// request instead.
+let deviceTokenPromise: Promise<string> | null = null;
+
 export async function ensureDeviceToken(): Promise<string> {
   const existing = tokenStore.getDeviceToken();
   if (existing) return existing;
-  const { deviceToken } = await devicesApi.webPreview();
-  tokenStore.setDeviceToken(deviceToken);
-  return deviceToken;
+
+  if (!deviceTokenPromise) {
+    deviceTokenPromise = devicesApi
+      .webPreview()
+      .then(({ deviceToken }) => {
+        tokenStore.setDeviceToken(deviceToken);
+        return deviceToken;
+      })
+      .finally(() => {
+        deviceTokenPromise = null;
+      });
+  }
+  return deviceTokenPromise;
 }
+

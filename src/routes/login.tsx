@@ -7,6 +7,7 @@ import { Stars } from "@/components/echoryx/Stars";
 import tiger from "@/assets/tiger-mascot.png";
 import { useAuth } from "@/lib/auth";
 import { ApiError } from "@/lib/api";
+import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -23,6 +24,7 @@ export const Route = createFileRoute("/login")({
 function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const t = useT();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +38,7 @@ function Login() {
       await login(email, password);
       navigate({ to: "/home" });
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
+      setError(err instanceof ApiError ? err.message : t("login.genericError"));
     } finally {
       setIsSubmitting(false);
     }
@@ -44,22 +46,22 @@ function Login() {
 
   return (
     <MobileFrame>
-      <div className="relative">
+      <div className="relative md:min-h-[85vh] md:flex md:items-center md:justify-center">
         <Stars />
-        <div className="relative pt-2">
-          <div className="flex justify-center"><Logo className="w-40" /></div>
+        <div className="relative pt-2 w-full md:max-w-sm desktop:max-w-md md:mx-auto">
+          <div className="flex justify-center"><Logo className="w-40 md:w-48" /></div>
           <div className="relative flex justify-center mt-2">
             <div className="absolute inset-0 rounded-full gradient-primary blur-2xl opacity-30" />
             <img src={tiger} alt="Tiger" className="relative w-28 animate-float" />
           </div>
-          <h2 className="text-center text-xl font-bold mt-4">Welcome back!</h2>
-          <p className="text-center text-sm text-muted-foreground">Sign in to continue the adventure</p>
+          <h2 className="text-center text-xl font-bold mt-4">{t("login.welcome")}</h2>
+          <p className="text-center text-sm text-muted-foreground">{t("login.subtitle")}</p>
 
           <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
             <Field
               icon={<Mail className="w-4 h-4" />}
-              label="Email"
-              placeholder="Enter your email"
+              label={t("login.email")}
+              placeholder={t("login.emailPlaceholder")}
               type="email"
               value={email}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
@@ -67,8 +69,8 @@ function Login() {
             />
             <Field
               icon={<Lock className="w-4 h-4" />}
-              label="Password"
-              placeholder="Enter your password"
+              label={t("login.password")}
+              placeholder={t("login.passwordPlaceholder")}
               type="password"
               value={password}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
@@ -81,12 +83,12 @@ function Login() {
               disabled={isSubmitting}
               className="block w-full text-center py-3.5 rounded-2xl gradient-primary shadow-glow font-semibold text-primary-foreground disabled:opacity-60"
             >
-              {isSubmitting ? "Signing in…" : "Sign in"}
+              {isSubmitting ? t("login.submitting") : t("login.submit")}
             </button>
           </form>
 
           <p className="text-center text-sm text-muted-foreground mt-6">
-            No account yet? <Link to="/register" className="text-primary-glow font-semibold">Sign up</Link>
+            {t("login.noAccount")} <Link to="/register" className="text-primary-glow font-semibold">{t("login.signUp")}</Link>
           </p>
         </div>
       </div>

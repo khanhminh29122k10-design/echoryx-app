@@ -9,6 +9,7 @@ type AuthState = {
   isLoading: boolean;
   isAuthenticated: boolean;
   refreshChildren: () => Promise<Child[]>;
+  setParent: (parent: Parent) => void;
   setActiveChildId: (childId: string) => void;
   login: (email: string, password: string) => Promise<void>;
   register: (input: { email: string; password: string; name: string }) => Promise<void>;
@@ -68,6 +69,10 @@ export function AuthProvider({ children: reactChildren }: { children: ReactNode 
   }
 
   async function login(email: string, password: string) {
+    // A device token (and active-child pick) from a previously logged-in
+    // parent on this browser must not carry over — it belongs to a different
+    // account and the backend will reject it (403) once reused here.
+    tokenStore.clear();
     const result = await authApi.login({ email, password });
     tokenStore.setSession(result.accessToken, result.refreshToken);
     setParent(result.parent);
@@ -75,6 +80,7 @@ export function AuthProvider({ children: reactChildren }: { children: ReactNode 
   }
 
   async function register(input: { email: string; password: string; name: string }) {
+    tokenStore.clear();
     const result = await authApi.register({
       ...input,
       privacyPolicyAccepted: true,
@@ -107,6 +113,7 @@ export function AuthProvider({ children: reactChildren }: { children: ReactNode 
         isLoading,
         isAuthenticated: Boolean(parent),
         refreshChildren,
+        setParent,
         setActiveChildId,
         login,
         register,
