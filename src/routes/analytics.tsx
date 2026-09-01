@@ -1,8 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { MobileFrame } from "@/components/echoryx/MobileFrame";
 import { BottomNav } from "@/components/echoryx/BottomNav";
 import { ScreenHeader } from "@/components/echoryx/ScreenHeader";
 import { AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
+import { RequireAuth, useAuth } from "@/lib/auth";
+import { progressApi, type WeeklyAnalytics } from "@/lib/api";
 import { useT, type TranslationKey } from "@/lib/i18n";
 
 export const Route = createFileRoute("/analytics")({
@@ -14,20 +17,42 @@ export const Route = createFileRoute("/analytics")({
       { property: "og:description", content: "Numbers behind the smiles." },
     ],
   }),
-  component: Analytics,
+  component: () => (
+    <RequireAuth>
+      <Analytics />
+    </RequireAuth>
+  ),
 });
 
-const days = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map((d, i) => ({ d, watch: 40 + i*7, learn: 15 + i*4 }));
 const periodKeys: TranslationKey[] = ["analytics.week", "analytics.month", "analytics.year"];
-const categoryRows: [TranslationKey, number][] = [
-  ["analytics.educationalStories", 60],
-  ["analytics.cartoons", 25],
-  ["analytics.songsMusic", 10],
-  ["analytics.other", 5],
-];
+
+function formatDuration(totalSeconds: number): string {
+  const totalMinutes = Math.round(totalSeconds / 60);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
 
 function Analytics() {
+  const { activeChild } = useAuth();
   const t = useT();
+  const [data, setData] = useState<WeeklyAnalytics | null>(null);
+
+  useEffect(() => {
+    if (!activeChild) return;
+    progressApi.weeklyAnalytics(activeChild.id).then(setData).catch(() => undefined);
+  }, [activeChild]);
+
+  const categoryRows: [TranslationKey, number][] = data
+    ? [
+        ["analytics.educational", data.categories.educational],
+        ["analytics.entertainment", data.categories.entertainment],
+        ["analytics.other", data.categories.other],
+      ]
+    : [];
+
+  const change = data?.percentChangeVsPreviousWeek ?? null;
+
   return (
     <MobileFrame>
       <ScreenHeader title={t("analytics.title")} />
@@ -42,25 +67,33 @@ function Analytics() {
           <div className="flex justify-between items-baseline">
             <div>
               <div className="text-xs text-muted-foreground">{t("analytics.totalThisWeek")}</div>
-              <div className="text-2xl font-bold">11h 20m</div>
+              <div className="text-2xl font-bold">{data ? formatDuration(data.totalWatchSeconds) : "—"}</div>
             </div>
-            <div className="text-xs text-success">↑ 12%</div>
+            {change !== null && (
+              <div className={`text-xs ${change >= 0 ? "text-success" : "text-destructive"}`}>
+                {change >= 0 ? "↑" : "↓"} {Math.abs(change)}%
+              </div>
+            )}
           </div>
-          <ResponsiveContainer width="100%" height={160} className="md:!h-[200px]">
-            <AreaChart data={days}>
-              <defs>
-                <linearGradient id="ag" x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="0%" stopColor="#3082f6" stopOpacity={0.6} />
-                  <stop offset="100%" stopColor="#3082f6" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <XAxis dataKey="d" tick={{ fill: "#95a6be", fontSize: 10 }} axisLine={false} tickLine={false} />
-              <YAxis hide />
-              <Tooltip contentStyle={{ background: "#0d1936", border: "none", borderRadius: 12, fontSize: 12 }} />
-              <Area type="monotone" dataKey="watch" stroke="#3082f6" strokeWidth={2} fill="url(#ag)" />
-              <Area type="monotone" dataKey="learn" stroke="#00c470" strokeWidth={2} fill="transparent" />
-            </AreaChart>
-          </ResponsiveContainer>
+          {data && data.days.some((d) => d.watch > 0 || d.learn > 0) ? (
+            <ResponsiveContainer width="100%" height={160} className="md:!h-[200px]">
+              <AreaChart data={data.days}>
+                <defs>
+                  <linearGradient id="ag" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stopColor="#3082f6" stopOpacity={0.6} />
+                    <stop offset="100%" stopColor="#3082f6" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="d" tick={{ fill: "#95a6be", fontSize: 10 }} axisLine={false} tickLine={false} />
+                <YAxis hide />
+                <Tooltip contentStyle={{ background: "#0d1936", border: "none", borderRadius: 12, fontSize: 12 }} />
+                <Area type="monotone" dataKey="watch" stroke="#3082f6" strokeWidth={2} fill="url(#ag)" />
+                <Area type="monotone" dataKey="learn" stroke="#00c470" strokeWidth={2} fill="transparent" />
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="text-xs text-muted-foreground py-8 text-center">{t("analytics.noData")}</p>
+          )}
           <div className="flex gap-4 text-[11px]">
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary" /> {t("analytics.watchTime")}</span>
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-success" /> {t("analytics.learning")}</span>

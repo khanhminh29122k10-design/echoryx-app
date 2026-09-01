@@ -52,7 +52,7 @@ function Profile() {
 
   return (
     <MobileFrame>
-      <ScreenHeader title={t("profile.title")} right={<button className="w-10 h-10 rounded-xl bg-card border border-border flex items-center justify-center"><Edit2 className="w-4 h-4" /></button>} />
+      <ScreenHeader title={t("profile.title")} right={<Link to="/personal-info" className="w-10 h-10 rounded-xl bg-card border border-border flex items-center justify-center"><Edit2 className="w-4 h-4" /></Link>} />
 
       <div className="desktop:grid desktop:grid-cols-3 desktop:gap-8 desktop:items-start">
         <div className="desktop:col-span-1">

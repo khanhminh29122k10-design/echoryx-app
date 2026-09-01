@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Eye, Mail, Lock } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { useState } from "react";
 import { MobileFrame } from "@/components/echoryx/MobileFrame";
 import { Logo } from "@/components/echoryx/Logo";
@@ -27,6 +27,7 @@ function Login() {
   const t = useT();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -71,10 +72,19 @@ function Login() {
               icon={<Lock className="w-4 h-4" />}
               label={t("login.password")}
               placeholder={t("login.passwordPlaceholder")}
-              type="password"
+              type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
-              trailing={<Eye className="w-4 h-4 text-muted-foreground" />}
+              trailing={
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? t("login.hidePassword") : t("login.showPassword")}
+                  className="text-muted-foreground"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              }
               required
             />
             {error && <p className="text-xs text-destructive text-center">{error}</p>}

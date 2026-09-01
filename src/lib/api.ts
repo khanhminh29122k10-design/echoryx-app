@@ -212,6 +212,12 @@ export type ProgressReport = {
   growth: { week: string; score: number }[];
   skills: { vocabulary: number; attention: number; empathy: number; problemSolving: number };
 };
+export type WeeklyAnalytics = {
+  totalWatchSeconds: number;
+  percentChangeVsPreviousWeek: number | null;
+  days: { date: string; d: string; watch: number; learn: number }[];
+  categories: { educational: number; entertainment: number; other: number };
+};
 export type Badge = {
   id: string;
   code: string;
@@ -339,6 +345,7 @@ export const progressApi = {
   dashboard: (childId: string, date?: string) =>
     apiRequest<Dashboard>(`/children/${childId}/dashboard${date ? `?date=${date}` : ""}`),
   report: (childId: string, weeks = 12) => apiRequest<ProgressReport>(`/children/${childId}/progress?weeks=${weeks}`),
+  weeklyAnalytics: (childId: string) => apiRequest<WeeklyAnalytics>(`/children/${childId}/weekly-analytics`),
 };
 
 export const notificationsApi = {
