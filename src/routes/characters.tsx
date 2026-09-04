@@ -93,7 +93,7 @@ function Characters() {
             <input
               type="range"
               min={2}
-              max={10}
+              max={12}
               value={age}
               onChange={(e) => setAge(Number(e.target.value))}
               className="mt-1.5 w-full accent-primary"
