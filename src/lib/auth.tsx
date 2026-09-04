@@ -23,6 +23,13 @@ export function AuthProvider({ children: reactChildren }: { children: ReactNode 
   const [kids, setKids] = useState<Child[]>([]);
   const [activeChildId, setActiveChildIdState] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  // Whether this browser holds a session at all. Set synchronously from localStorage at
+  // startup (a token existing is reason enough to treat the parent as signed in) and from then
+  // on changed ONLY by an explicit action: login/register succeeding, logout() running, or the
+  // backend actively rejecting the session (a real 401/403, confirmed after apiRequest's own
+  // refresh-and-retry already failed). It is never flipped by a network hiccup, a slow/failed
+  // background fetch, or closing and reopening the tab — those must never look like a logout.
+  const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(tokenStore.getAccessToken()));
 
   async function loadSession(attempt = 0) {
     if (!tokenStore.getAccessToken()) {
@@ -46,12 +53,13 @@ export function AuthProvider({ children: reactChildren }: { children: ReactNode 
       // 401/403 — means this parent is genuinely logged out. Anything else (offline, a CORS
       // misconfig, the backend briefly restarting...) is a transient failure: the saved session
       // is likely still fine, so this must not silently sign the parent out. Retry a few times
-      // with backoff before giving up — the tokens stay put either way, so a manual reload once
-      // connectivity is back will always pick the session back up.
+      // with backoff before giving up — the tokens (and isAuthenticated) stay put either way,
+      // so a manual reload once connectivity is back will always pick the session back up.
       const isAuthRejection = err instanceof ApiError && (err.status === 401 || err.status === 403);
       if (isAuthRejection) {
         tokenStore.clear();
         setParent(null);
+        setIsAuthenticated(false);
         setIsLoading(false);
         return;
       }
@@ -91,6 +99,7 @@ export function AuthProvider({ children: reactChildren }: { children: ReactNode 
     const result = await authApi.login({ email, password });
     tokenStore.setSession(result.accessToken, result.refreshToken);
     setParent(result.parent);
+    setIsAuthenticated(true);
     await refreshChildren();
   }
 
@@ -104,6 +113,7 @@ export function AuthProvider({ children: reactChildren }: { children: ReactNode 
     });
     tokenStore.setSession(result.accessToken, result.refreshToken);
     setParent(result.parent);
+    setIsAuthenticated(true);
   }
 
   async function logout() {
@@ -115,6 +125,7 @@ export function AuthProvider({ children: reactChildren }: { children: ReactNode 
     setParent(null);
     setKids([]);
     setActiveChildIdState(null);
+    setIsAuthenticated(false);
   }
 
   const activeChild = kids.find((c) => c.id === activeChildId) ?? kids[0] ?? null;
@@ -126,7 +137,7 @@ export function AuthProvider({ children: reactChildren }: { children: ReactNode 
         children: kids,
         activeChild,
         isLoading,
-        isAuthenticated: Boolean(parent),
+        isAuthenticated,
         refreshChildren,
         setParent,
         setActiveChildId,
@@ -146,18 +157,21 @@ export function useAuth() {
   return ctx;
 }
 
-// Wrap any screen that requires a logged-in parent; bounces to /login otherwise.
+// Wrap any screen that requires a logged-in parent; bounces to /login otherwise. Gated on
+// isAuthenticated alone (a stored token) — never on isLoading, so a slow or transiently-failing
+// background profile fetch can't look like a logout and bounce someone who is really still
+// signed in. Pages below already render sensibly with parent/children still empty.
 export function RequireAuth({ children }: { children: ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!isAuthenticated) {
       navigate({ to: "/login" });
     }
-  }, [isLoading, isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate]);
 
-  if (isLoading || !isAuthenticated) {
+  if (!isAuthenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">
         Loading…
