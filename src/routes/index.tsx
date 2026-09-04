@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { Logo } from "@/components/echoryx/Logo";
 import { Stars } from "@/components/echoryx/Stars";
 import tiger from "@/assets/tiger-mascot.png";
+import { useAuth } from "@/lib/auth";
 import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/")({
@@ -19,11 +20,16 @@ export const Route = createFileRoute("/")({
 
 function Splash() {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const t = useT();
   useEffect(() => {
-    const timer = setTimeout(() => navigate({ to: "/login" }), 2200);
+    // This used to always land on /login, no matter what — so opening a fresh tab looked
+    // exactly like being signed out even though the saved session (and every other open tab)
+    // was completely untouched. isAuthenticated is known synchronously from the stored token,
+    // so there's no race to worry about here.
+    const timer = setTimeout(() => navigate({ to: isAuthenticated ? "/home" : "/login" }), 2200);
     return () => clearTimeout(timer);
-  }, [navigate]);
+  }, [navigate, isAuthenticated]);
 
   return (
     <div className="relative min-h-screen w-full flex flex-col items-center justify-center overflow-hidden">
