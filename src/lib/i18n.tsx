@@ -256,6 +256,7 @@ const en = {
   "child.startedAt": "Started at {time}",
   "child.endWatching": "End watching",
   "child.ongoing": "(ongoing)",
+  "child.changeCharacter": "Change character",
 
   "overlay.timeLeftFmt": "{time} left",
   "overlay.greeting": "Hi {name}!",
@@ -569,6 +570,7 @@ const vi: Record<TranslationKey, string> = {
   "child.startedAt": "Bắt đầu lúc {time}",
   "child.endWatching": "Kết thúc xem",
   "child.ongoing": "(đang diễn ra)",
+  "child.changeCharacter": "Đổi nhân vật",
 
   "overlay.timeLeftFmt": "còn {time}",
   "overlay.greeting": "Chào {name}!",

@@ -1,12 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Play, Square } from "lucide-react";
+import { Play, Square, Check } from "lucide-react";
 import { useEffect, useState } from "react";
 import { MobileFrame } from "@/components/echoryx/MobileFrame";
 import { BottomNav } from "@/components/echoryx/BottomNav";
 import { ScreenHeader } from "@/components/echoryx/ScreenHeader";
-import tiger from "@/assets/tiger-mascot.png";
+import { characters as characterAssets, tiger } from "@/components/echoryx/data";
 import { RequireAuth, useAuth } from "@/lib/auth";
-import { ensureDeviceToken, watchSessionsApi, type WatchSession } from "@/lib/api";
+import { ensureDeviceToken, watchSessionsApi, charactersApi, childrenApi, type WatchSession, type Character } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/child")({
@@ -36,11 +36,14 @@ function formatTime(iso: string) {
 }
 
 function Child() {
-  const { activeChild } = useAuth();
+  const { activeChild, refreshChildren } = useAuth();
   const t = useT();
   const [current, setCurrent] = useState<WatchSession | null>(null);
   const [history, setHistory] = useState<WatchSession[]>([]);
   const [isBusy, setIsBusy] = useState(false);
+  const [remoteCharacters, setRemoteCharacters] = useState<Character[]>([]);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [savingCharacter, setSavingCharacter] = useState<string | null>(null);
 
   async function refresh() {
     if (!activeChild) return;
@@ -56,6 +59,34 @@ function Child() {
     refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeChild]);
+
+  useEffect(() => {
+    charactersApi.list().then(setRemoteCharacters).catch(() => undefined);
+  }, []);
+
+  // Local (bundled) character assets are keyed by "code" (e.g. "tiger"), matching the
+  // backend Character's `code` field — the same mapping characters.tsx uses when creating a
+  // child. The child's own `characterId` is the backend Character's id, so we hop through
+  // remoteCharacters to find the matching local asset for the mascot image.
+  const currentRemote = remoteCharacters.find((c) => c.id === activeChild?.characterId);
+  const currentAsset = characterAssets.find((c) => c.id === currentRemote?.code);
+  const mascotImg = currentAsset?.img ?? tiger;
+
+  async function changeCharacter(code: string) {
+    if (!activeChild) return;
+    const remote = remoteCharacters.find((c) => c.code === code);
+    if (!remote) return;
+    setSavingCharacter(code);
+    try {
+      await childrenApi.update(activeChild.id, { characterId: remote.id });
+      await refreshChildren();
+      setPickerOpen(false);
+    } catch {
+      // Non-fatal — the picker just stays open so the parent can retry.
+    } finally {
+      setSavingCharacter(null);
+    }
+  }
 
   async function startWatching() {
     if (!activeChild) return;
@@ -89,7 +120,7 @@ function Child() {
         <div className="desktop:col-span-2 rounded-3xl overflow-hidden bg-card border border-border/60 shadow-card">
           <div className="relative h-40 md:h-48 gradient-primary flex items-center justify-center">
             <div className="absolute inset-0 opacity-30 [background:radial-gradient(circle_at_30%_40%,white,transparent_60%)]" />
-            <img src={tiger} alt="Show" className="relative h-32 md:h-36 animate-float" />
+            <img src={mascotImg} alt="Show" className="relative h-32 md:h-36 animate-float" />
             {!current && (
               <button
                 onClick={startWatching}
@@ -123,6 +154,39 @@ function Child() {
               </>
             )}
           </div>
+        </div>
+
+        <div className="desktop:col-span-2">
+          <button
+            onClick={() => setPickerOpen((v) => !v)}
+            className="mt-3 w-full py-2.5 rounded-xl bg-card border border-border/60 font-semibold text-sm hover:border-primary transition"
+          >
+            {t("child.changeCharacter")}
+          </button>
+          {pickerOpen && (
+            <div className="mt-3 grid grid-cols-4 gap-2 p-3 rounded-2xl bg-card border border-border/60">
+              {characterAssets.map((c) => {
+                const isActive = c.id === currentAsset?.id;
+                const isSaving = savingCharacter === c.id;
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => changeCharacter(c.id)}
+                    disabled={isSaving}
+                    className={`relative rounded-xl p-2 bg-secondary border transition disabled:opacity-60 ${isActive ? "border-primary shadow-glow" : "border-border/60"}`}
+                  >
+                    {isActive && (
+                      <span className="absolute top-1 right-1 w-4 h-4 rounded-full gradient-primary flex items-center justify-center">
+                        <Check className="w-2.5 h-2.5 text-primary-foreground" />
+                      </span>
+                    )}
+                    <img src={c.img} alt={c.name} className="h-12 w-full object-contain" />
+                    <div className="mt-1 text-[10px] text-center text-muted-foreground truncate">{c.name}</div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <div className="desktop:col-span-3 mt-6 desktop:mt-0">
