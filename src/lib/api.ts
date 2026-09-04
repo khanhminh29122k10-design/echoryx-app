@@ -65,11 +65,17 @@ type RequestOptions = {
   auth?: "parent" | "device" | "none";
 };
 
-let refreshPromise: Promise<boolean> | null = null;
+let refreshPromise: Promise<RefreshResult> | null = null;
 
-async function refreshAccessToken(): Promise<boolean> {
+// "invalid" means the backend itself rejected the refresh token (expired/revoked) — that's a
+// real logout. "network-error" means the request never got a straight answer at all (offline,
+// CORS misconfig, backend briefly down, DNS hiccup...) — the session is likely still fine, so
+// this must NOT be treated the same as an actual logout.
+type RefreshResult = "ok" | "invalid" | "network-error";
+
+async function refreshAccessToken(): Promise<RefreshResult> {
   const refreshToken = tokenStore.getRefreshToken();
-  if (!refreshToken) return false;
+  if (!refreshToken) return "invalid";
 
   if (!refreshPromise) {
     refreshPromise = fetch(`${API_BASE}/auth/refresh`, {
@@ -78,12 +84,12 @@ async function refreshAccessToken(): Promise<boolean> {
       body: JSON.stringify({ refreshToken }),
     })
       .then(async (res) => {
-        if (!res.ok) return false;
+        if (!res.ok) return "invalid" as const;
         const data = (await res.json()) as { accessToken: string; refreshToken: string };
         tokenStore.setSession(data.accessToken, data.refreshToken);
-        return true;
+        return "ok" as const;
       })
-      .catch(() => false)
+      .catch(() => "network-error" as const)
       .finally(() => {
         refreshPromise = null;
       });
@@ -111,9 +117,12 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}, 
   });
 
   if (res.status === 401 && auth === "parent" && !_isRetry) {
-    const refreshed = await refreshAccessToken();
-    if (refreshed) return apiRequest<T>(path, options, true);
-    tokenStore.clear();
+    const refreshResult = await refreshAccessToken();
+    if (refreshResult === "ok") return apiRequest<T>(path, options, true);
+    // Only an explicit rejection from the server means the parent is actually logged out.
+    // A network-level failure leaves the stored session alone — this request just fails
+    // below like any other transient error, instead of silently signing them out.
+    if (refreshResult === "invalid") tokenStore.clear();
   }
 
   // A stored device token can belong to a previously logged-in parent on this

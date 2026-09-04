@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { authApi, childrenApi, tokenStore, type Child, type Parent } from "./api";
+import { ApiError, authApi, childrenApi, tokenStore, type Child, type Parent } from "./api";
 
 type AuthState = {
   parent: Parent | null;
@@ -24,7 +24,7 @@ export function AuthProvider({ children: reactChildren }: { children: ReactNode 
   const [activeChildId, setActiveChildIdState] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  async function loadSession() {
+  async function loadSession(attempt = 0) {
     if (!tokenStore.getAccessToken()) {
       setIsLoading(false);
       return;
@@ -40,10 +40,25 @@ export function AuthProvider({ children: reactChildren }: { children: ReactNode 
         setActiveChildIdState(active.id);
         tokenStore.setActiveChildId(active.id);
       }
-    } catch {
-      tokenStore.clear();
-      setParent(null);
-    } finally {
+      setIsLoading(false);
+    } catch (err) {
+      // Only the backend actively rejecting the (already refresh-retried) request — a real
+      // 401/403 — means this parent is genuinely logged out. Anything else (offline, a CORS
+      // misconfig, the backend briefly restarting...) is a transient failure: the saved session
+      // is likely still fine, so this must not silently sign the parent out. Retry a few times
+      // with backoff before giving up — the tokens stay put either way, so a manual reload once
+      // connectivity is back will always pick the session back up.
+      const isAuthRejection = err instanceof ApiError && (err.status === 401 || err.status === 403);
+      if (isAuthRejection) {
+        tokenStore.clear();
+        setParent(null);
+        setIsLoading(false);
+        return;
+      }
+      if (attempt < 3) {
+        setTimeout(() => loadSession(attempt + 1), 1000 * 2 ** attempt);
+        return;
+      }
       setIsLoading(false);
     }
   }
