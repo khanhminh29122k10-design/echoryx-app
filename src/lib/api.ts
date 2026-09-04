@@ -290,11 +290,11 @@ export const childrenApi = {
   update: (childId: string, input: Partial<{ name: string; ageGroup: AgeGroup; characterId: string }>) =>
     apiRequest<Child>(`/children/${childId}`, { method: "PATCH", body: input }),
   getFrequency: (childId: string) =>
-    apiRequest<{ childId: string; intervalMinutes: number }>(`/children/${childId}/frequency`),
-  setFrequency: (childId: string, intervalMinutes: number) =>
-    apiRequest<{ childId: string; intervalMinutes: number }>(`/children/${childId}/frequency`, {
+    apiRequest<{ childId: string; intervalMinutes: number; aiEvaluationEnabled: boolean }>(`/children/${childId}/frequency`),
+  setFrequency: (childId: string, intervalMinutes: number, aiEvaluationEnabled?: boolean) =>
+    apiRequest<{ childId: string; intervalMinutes: number; aiEvaluationEnabled: boolean }>(`/children/${childId}/frequency`, {
       method: "PUT",
-      body: { intervalMinutes },
+      body: { intervalMinutes, aiEvaluationEnabled },
     }),
 };
 
