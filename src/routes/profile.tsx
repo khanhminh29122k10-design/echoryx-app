@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Camera, Edit2, ChevronRight, Star, Trophy, Clock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { MobileFrame } from "@/components/echoryx/MobileFrame";
@@ -34,6 +34,7 @@ const AGE_GROUP_KEY: Record<string, TranslationKey> = {
 
 function Profile() {
   const { parent, children: kids, activeChild, setActiveChildId } = useAuth();
+  const navigate = useNavigate();
   const t = useT();
   const [rewards, setRewards] = useState<RewardsSummary | null>(null);
   const [progress, setProgress] = useState<ProgressReport | null>(null);
@@ -80,7 +81,10 @@ function Profile() {
             {kids.map((kid) => (
               <button
                 key={kid.id}
-                onClick={() => setActiveChildId(kid.id)}
+                onClick={() => {
+                  setActiveChildId(kid.id);
+                  navigate({ to: "/child" });
+                }}
                 className={`w-full flex items-center gap-3 p-3 rounded-2xl bg-card border transition ${kid.id === activeChild?.id ? "border-primary shadow-glow" : "border-border/60"}`}
               >
                 <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-bold shrink-0">
